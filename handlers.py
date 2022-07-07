@@ -46,3 +46,44 @@ async def mac(call: CallbackQuery, callback_data: dict):
 async def cancel(call: CallbackQuery):
     await call.answer('Отмена', show_alert=True)
     await call.message.edit_reply_markup(reply_markup=None)
+# Section: ShopApp
+from aiogram.dispatcher import FSMContext
+
+from shop import Shop, price1, price2
+
+@dp.message_handler(Command('buy'), state=None)
+async def shop(message: Message):
+    await message.answer('Какой товар вы хотите купить 1 или 2?')
+
+    await Shop.step1.set()
+
+@dp.message_handler(state=Shop.step1)
+async def shop(message: Message, state: FSMContext):
+    item = message.text
+    await state.update_data(
+        {
+          'item': item
+        }
+    )
+    await message.answer('Сколько вас интересует')
+    await Shop.next()
+
+@dp.message_handler(state=Shop.step2)
+async def count(message: Message, state: FSMContext):
+    data = await state.get_data()
+    item = data.get('item')
+    if item == '1':
+        p = price1
+    else:
+        p = price2
+
+    count = int(message.text)
+    await message.answer(f'Супер! С вас: {p*count}')
+
+    await state.finish()
+
+
+
+
+
+
